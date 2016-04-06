@@ -70,7 +70,6 @@ LOCAL_SRC_FILES :=                              \
     $(SRCDIR)/r4300/recomp.c                    \
     $(SRCDIR)/r4300/reset.c                     \
     $(SRCDIR)/r4300/tlb.c                       \
-    $(SRCDIR)/r4300/new_dynarec/new_dynarec.c   \
     $(SRCDIR)/rdp/fb.c                          \
     $(SRCDIR)/rdp/rdp_core.c                    \
     $(SRCDIR)/ri/rdram.c                        \
@@ -107,6 +106,7 @@ LOCAL_LDFLAGS :=                                                    \
 
 ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
     # Use for ARM7a:
+    LOCAL_SRC_FILES += $(SRCDIR)/r4300/new_dynarec/new_dynarec.c
     LOCAL_SRC_FILES += $(SRCDIR)/r4300/new_dynarec/arm/linkage_arm.S
     LOCAL_SRC_FILES += $(SRCDIR)/r4300/new_dynarec/arm/arm_cpu_features.c
     LOCAL_CFLAGS += -DDYNAREC
@@ -116,11 +116,19 @@ ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
 
 else ifeq ($(TARGET_ARCH_ABI), armeabi)
     # Use for pre-ARM7a:
+    LOCAL_SRC_FILES += $(SRCDIR)/r4300/new_dynarec/new_dynarec.c
     LOCAL_SRC_FILES += $(SRCDIR)/r4300/new_dynarec/arm/linkage_arm.S
     LOCAL_SRC_FILES += $(SRCDIR)/r4300/new_dynarec/arm/arm_cpu_features.c
     LOCAL_CFLAGS += -DARMv5_ONLY
     LOCAL_CFLAGS += -DDYNAREC
     LOCAL_CFLAGS += -DNEW_DYNAREC=3
+    
+else ifeq ($(TARGET_ARCH_ABI), arm64-v8a)
+    # Use for ARMv8a:
+    LOCAL_SRC_FILES += $(SRCDIR)/r4300/new_dynarec/new_dynarec_64.c
+    LOCAL_SRC_FILES += $(SRCDIR)/r4300/new_dynarec/arm64/linkage_arm64.S
+    LOCAL_CFLAGS += -DDYNAREC
+    LOCAL_CFLAGS += -DNEW_DYNAREC=4
 
 else ifeq ($(TARGET_ARCH_ABI), x86)
     # Use for x86:

@@ -212,7 +212,7 @@
         <item>5</item>
     </string-array>
 
-    <string name="glide64Frameskip_default" translatable="false">-5</string>
+    <string name="glide64Frameskip_default" translatable="false">0</string>
 
     <!-- Rice Screen Update List -->
     <string-array name="riceScreenUpdate_entries">
@@ -404,16 +404,16 @@
     <string-array name="videoPlugin_entries" translatable="false">
         <item>@string/videoPlugin_entryNone</item>
         <item>@string/videoPlugin_entryGlide64</item>
-        <item>@string/videoPlugin_entryGliden64</item>
+        <!-- <item>@string/videoPlugin_entryGliden64</item>
         <item>@string/videoPlugin_entryGln64</item>
-        <item>@string/videoPlugin_entryRice</item>
+        <item>@string/videoPlugin_entryRice</item> -->
     </string-array>
     <string-array name="videoPlugin_values" translatable="false">
         <item></item>
         <item>libmupen64plus-video-glide64mk2.so</item>
-        <item>libmupen64plus-video-gliden64%1$s.so</item>
+        <!-- <item>libmupen64plus-video-gliden64%1$s.so</item>
         <item>libmupen64plus-video-gln64.so</item>
-        <item>libmupen64plus-video-rice.so</item>
+        <item>libmupen64plus-video-rice.so</item> -->
     </string-array>
 
     <string name="videoPlugin_default" translatable="false">libmupen64plus-video-glide64mk2.so</string>
@@ -437,16 +437,16 @@
         <item>@string/audioPlugin_entryNone</item>
         <item>@string/audioPlugin_entryNoneNoSpeedLimit</item>
         <item>@string/audioPlugin_entrySdl</item>
-        <item>@string/audioPlugin_entrySles</item>
+        <!-- <item>@string/audioPlugin_entrySles</item> -->
     </string-array>
     <string-array name="audioPlugin_values" translatable="false">
         <item></item>
         <item>nospeedlimit</item>
         <item>libmupen64plus-audio-sdl.so</item>
-        <item>libmupen64plus-audio-sles.so</item>
+        <!-- <item>libmupen64plus-audio-sles.so</item> -->
     </string-array>
 
-    <string name="audioPlugin_default" translatable="false">libmupen64plus-audio-sles.so</string>
+    <string name="audioPlugin_default" translatable="false">libmupen64plus-audio-sdl.so</string>
 
     <!-- Audio SDL Buffer Size -->
     <string-array name="audioSDLBufferSize_entries" translatable="false">
@@ -460,7 +460,7 @@
         <item>8</item>
     </string-array>
     
-    <string name="audioSDLBufferSize_default" translatable="false">8</string>
+    <string name="audioSDLBufferSize_default" translatable="false">2048</string>
     
     <!-- Audio SLES Buffer Size -->
     <string-array name="audioSLESBufferSize_entries" translatable="false">

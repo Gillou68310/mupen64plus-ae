@@ -243,7 +243,7 @@ public class GlobalPrefs
     // ... add more as needed
 
     // Shared preferences default values
-    public static final String DEFAULT_EMULATION_PROFILE_DEFAULT = "Glide64-Fast";
+    public static final String DEFAULT_EMULATION_PROFILE_DEFAULT = "Glide64-Accurate";
     public static final String DEFAULT_TOUCHSCREEN_PROFILE_DEFAULT = AppData.IS_OUYA_HARDWARE ? "" : "Analog";
     public static final String DEFAULT_CONTROLLER_PROFILE_DEFAULT = AppData.IS_OUYA_HARDWARE ? "OUYA" : "";
     public static final int DEFAULT_PAK_TYPE = NativeConstants.PAK_TYPE_MEMORY;

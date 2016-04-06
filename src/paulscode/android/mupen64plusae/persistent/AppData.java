@@ -338,7 +338,7 @@ public class AppData
     
     private boolean libraryExists( String undecoratedName )
     {
-        File library = new File( libsDir + "lib" + undecoratedName + ".so" );
+        File library = new File( libsDir + "/lib" + undecoratedName + ".so" );
         return library.exists();
     }
     
@@ -349,19 +349,19 @@ public class AppData
         return
                 libraryExists( "ae-exports" )                           &&
                 libraryExists( "ae-imports" )                           &&
-                libraryExists( "freetype" )                             &&
+                //libraryExists( "freetype" )                             &&
                 libraryExists( "mupen64plus-audio-sdl" )                &&
-                libraryExists( "mupen64plus-audio-sles" )               &&
+                //libraryExists( "mupen64plus-audio-sles" )               &&
                 libraryExists( "mupen64plus-core" )                     &&
                 libraryExists( "mupen64plus-input-android" )            &&
                 libraryExists( "mupen64plus-rsp-hle" )                  &&
                 libraryExists( "mupen64plus-ui-console" )               &&
                 libraryExists( "mupen64plus-video-glide64mk2" )         &&
-                libraryExists( "mupen64plus-video-gliden64-gles20" )    &&
-                libraryExists( "mupen64plus-video-gliden64-gles30" )    &&
-                libraryExists( "mupen64plus-video-gliden64-gles31" )    &&
-                libraryExists( "mupen64plus-video-gln64" )              &&
-                libraryExists( "mupen64plus-video-rice" )               &&
+                //libraryExists( "mupen64plus-video-gliden64-gles20" )    &&
+                //libraryExists( "mupen64plus-video-gliden64-gles30" )    &&
+                //libraryExists( "mupen64plus-video-gliden64-gles31" )    &&
+                //libraryExists( "mupen64plus-video-gln64" )              &&
+                //libraryExists( "mupen64plus-video-rice" )               &&
                 libraryExists( "SDL2" );
         // @formatter:on
     }

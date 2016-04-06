@@ -1,6 +1,6 @@
 APP_STL := gnustl_static
 
-APP_ABI := armeabi-v7a x86
+APP_ABI := arm64-v8a
 # TODO: mips
 
 APP_PLATFORM := android-15
