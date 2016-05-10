@@ -25,6 +25,9 @@
 
 #include "new_dynarec_64.c"
 
+//#define DISASM_BLOCK
+static int disasm_block[]={0xa400000};
+
 typedef struct{
   intptr_t addr;
   int32_t size;
@@ -282,8 +285,8 @@ static csh handle;
 
 void profiler_init(void)
 {
-  //if(cs_open(ARCHITECTURE, MODE, &handle) != CS_ERR_OK) return;
-  //cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+  if(cs_open(ARCHITECTURE, MODE, &handle) != CS_ERR_OK) return;
+  cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
   base_addr = extra_memory;
   new_dynarec_init();
 
@@ -314,6 +317,55 @@ void profiler_block(int addr)
   new_recompile_block(addr);
   end=(uint32_t *)out;
 
+  //for(int i=0;i<linkcount;i++){
+  //  if(!link_addr[i][2])
+  //    dynamic_linker((void*)link_addr[i][0],0xa4000044);
+  //}
+
+  //int i;
+  //for(i = 0; i < 4096; i++)
+  //{
+  //  struct ll_entry *head;
+  //  head=jump_out[i];
+  //  while(head!=NULL) {
+  //    intptr_t addr=get_pointer(head->addr);
+  //    addr=(intptr_t)kill_pointer(head->addr);
+  //    head=head->next;
+  //  }
+
+  //  head=jump_dirty[i];
+  //  while(head!=NULL) {
+  //    verify_dirty(head->addr);
+  //    uintptr_t start,end;
+  //    get_bounds((intptr_t)head->addr, &start, &end);
+  //    isclean((intptr_t)head->addr);
+  //    uintptr_t clean=get_clean_addr((intptr_t)head->addr);
+  //    head=head->next;
+  //  }
+
+  //  head=jump_in[i];
+  //  while(head!=NULL) {
+  //    isclean((intptr_t)head->addr);
+  //    head=head->next;
+  //  }
+  //}
+
+#ifdef DISASM_BLOCK
+  int debug=0;
+  int block, inst;
+  for(block=0;block<(sizeof(disasm_block)>>2);block++) {
+    for(inst=0;inst<slen;inst++) {
+      if((start+inst*4)==disasm_block[block]) {
+        debug=1;
+        break;
+      }
+    }
+  }
+  if(!debug) return;
+#else
+  return;
+#endif
+
   if(handle == 0) return;
 
   sprintf(filename, "%.8x.txt", addr);
@@ -325,7 +377,6 @@ void profiler_block(int addr)
   if(count <= 0) return;
 
   for (uint32_t i = 0; i < count; i++) {
-    //printf("0x%x: %s %s\n", (uintptr_t)insn[i].address, insn[i].mnemonic, insn[i].op_str);
     sum += insn[i].size;
  #if NEW_DYNAREC_PROFILER >= NEW_DYNAREC_ARM
     if(INSTRUCTION.operands[1].reg == FP_REGISTER) {
@@ -377,40 +428,16 @@ void profiler_block(int addr)
   cs_free(insn, count);
   fflush(pFile);
   fclose(pFile);
-
-  /*for(int i=0;i<linkcount;i++){
-    if(!link_addr[i][2])
-      dynamic_linker((void*)link_addr[i][0],0xa4000044);
-  }
-
-  struct ll_entry *head;
-  head=jump_out[0x800];
-  while(head!=NULL) {
-    intptr_t addr=get_pointer(head->addr);
-    addr=(intptr_t)kill_pointer(head->addr);
-    head=head->next;
-  }
-
-  head=jump_dirty[0x800];
-  while(head!=NULL) {
-    assert(verify_dirty(head->addr));
-    uintptr_t start,end;
-    get_bounds((intptr_t)head->addr, &start, &end);
-    assert(!isclean((intptr_t)head->addr));
-    uintptr_t clean=get_clean_addr((intptr_t)head->addr);
-    head=head->next;
-  }
-
-  head=jump_in[0x800];
-  while(head!=NULL) {
-    assert(isclean((intptr_t)head->addr));
-    head=head->next;
-  }*/
 }
 
 void set_tlb(void)
 {
   using_tlb = 1;
+}
+
+void copy_mapping(void * map)
+{
+  memcpy((void*)memory_map, map, sizeof(memory_map));
 }
 
 #endif

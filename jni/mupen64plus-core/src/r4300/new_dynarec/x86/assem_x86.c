@@ -3303,6 +3303,17 @@ static void generate_map_const(u_int addr,int tr) {
   // void *mapaddr=memory_map+(addr>>12);
 }
 
+#ifdef NEW_DYNAREC_DEBUG
+static void do_print_pc(int prog_cpt) {
+  emit_pusha();
+  emit_movimm(prog_cpt,EAX);
+  emit_pushreg(EAX);
+  emit_call((intptr_t)print_pc);
+  emit_popreg(EAX);
+  emit_popa();
+}
+#endif
+
 /* Special assem */
 
 static void shift_assemble_x86(int i,struct regstat *i_regs)

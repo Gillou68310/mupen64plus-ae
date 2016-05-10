@@ -27,6 +27,7 @@ void profiler_init(void);
 void profiler_cleanup(void);
 void profiler_block(int addr);
 void set_tlb(void);
+void copy_mapping(void * map);
 #else
 
 #include <capstone.h>

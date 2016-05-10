@@ -402,7 +402,7 @@ static void *dynamic_linker(void * src, u_int vaddr)
 
 static void *dynamic_linker_ds(void * src, u_int vaddr)
 {
-  //TOBETESTED
+  //TOBEDONE: Find test case
   assert(0);
   u_int page=(vaddr^0x80000000)>>12;
   u_int vpage=page;
@@ -596,11 +596,11 @@ static int verify_dirty(void *addr)
   assert(verifier==(uintptr_t)verify_code||verifier==(uintptr_t)verify_code_vm||verifier==(uintptr_t)verify_code_ds);
 
   if(verifier==(uintptr_t)verify_code_vm||verifier==(uintptr_t)verify_code_ds) {
-    //TOBETESTED
-    assert(0);
     unsigned int page=(u_int)source>>12;
     uint64_t map_value=memory_map[page];
-    if(map_value>=0x80000000) return 0; //TOBEDONE: Why 0x80000000?
+    if(map_value>=((uintptr_t)1<<((sizeof(uintptr_t)<<3)-1))) { /*mapping=-1?*/
+      return 0;
+    }
     while(page<(((u_int)source+len-1)>>12)) {
       if((memory_map[++page]<<2)!=(map_value<<2)) return 0;
     }
@@ -667,9 +667,9 @@ static void get_bounds(intptr_t addr,uintptr_t *start,uintptr_t *end)
   assert(verifier==(uintptr_t)verify_code||verifier==(uintptr_t)verify_code_vm||verifier==(uintptr_t)verify_code_ds);
 
   if(verifier==(uintptr_t)verify_code_vm||verifier==(uintptr_t)verify_code_ds) {
-    //TOBETESTED
-    assert(0);
-    if(memory_map[source>>12]>=0x80000000) source=0;  //TOBEDONE: Why 0x80000000?
+    if(memory_map[source>>12]>=((uintptr_t)1<<((sizeof(uintptr_t)<<3)-1))) { /*mapping=-1?*/
+      source=0;
+    }
     else source+=(memory_map[source>>12]<<2);
   }
   *start=source;
@@ -1459,35 +1459,20 @@ static void emit_add(int rs1,int rs2,int rt)
 
 static void emit_adds(int rs1,int rs2,int rt)
 {
-  //TOBEDONE
-  assert(0);
-  /*assert(rs1!=29);
+  assert(rs1!=29);
   assert(rs2!=29);
   assert(rt!=29);
   assem_debug("adds %s,%s,%s",regname[rt],regname[rs1],regname[rs2]);
-  output_w32(0xe0900000|rd_rn_rm(rt,rs1,rs2));*/
+  output_w32(0x2b000000|rs2<<16|rs1<<5|rt);
 }
 
 static void emit_adc(int rs1,int rs2,int rt)
 {
-  //TOBEDONE
-  assert(0);
-  /*assert(rs1!=29);
+  assert(rs1!=29);
   assert(rs2!=29);
   assert(rt!=29);
   assem_debug("adc %s,%s,%s",regname[rt],regname[rs1],regname[rs2]);
-  output_w32(0xe0a00000|rd_rn_rm(rt,rs1,rs2));*/
-}
-
-static void emit_adcs(int rs1,int rs2,int rt)
-{
-  //TOBEDONE
-  assert(0);
-  /*assert(rs1!=29);
-  assert(rs2!=29);
-  assert(rt!=29);
-  assem_debug("adcs %s,%s,%s",regname[rt],regname[rs1],regname[rs2]);
-  output_w32(0xe0b00000|rd_rn_rm(rt,rs1,rs2));*/
+  output_w32(0x1a000000|rs2<<16|rs1<<5|rt);
 }
 
 static void emit_sub(int rs1,int rs2,int rt)
@@ -1501,24 +1486,20 @@ static void emit_sub(int rs1,int rs2,int rt)
 
 static void emit_subs(int rs1,int rs2,int rt)
 {
-  //TOBEDONE
-  assert(0);
-  /*assert(rs1!=29);
+  assert(rs1!=29);
   assert(rs2!=29);
   assert(rt!=29);
   assem_debug("subs %s,%s,%s",regname[rt],regname[rs1],regname[rs2]);
-  output_w32(0xe0500000|rd_rn_rm(rt,rs1,rs2));*/
+  output_w32(0x6b000000|rs2<<16|rs1<<5|rt);
 }
 
 static void emit_sbc(int rs1,int rs2,int rt)
 {
-  //TOBEDONE
-  assert(0);
-  /*assert(rs1!=29);
+  assert(rs1!=29);
   assert(rs2!=29);
   assert(rt!=29);
   assem_debug("sbc %s,%s,%s",regname[rt],regname[rs1],regname[rs2]);
-  output_w32(0xe0c00000|rd_rn_rm(rt,rs1,rs2));*/
+  output_w32(0x5a000000|rs2<<16|rs1<<5|rt);
 }
 
 static void emit_sbcs(int rs1,int rs2,int rt)
@@ -1540,12 +1521,19 @@ static void emit_neg(int rs, int rt)
 
 static void emit_negs(int rs, int rt)
 {
-  //TOBEDONE
-  assert(0);
-  /*assert(rs!=29);
+  assert(rs!=29);
   assert(rt!=29);
-  assem_debug("rsbs %s,%s,#0",regname[rt],regname[rs]);
-  output_w32(0xe2700000|rd_rn_rm(rt,rs,0));*/
+  assem_debug("negs %s,%s",regname[rt],regname[rs]);
+  output_w32(0x6b000000|rs<<16|WZR<<5|rt);
+}
+
+static void emit_rscimm(int rs,int imm,u_int rt)
+{
+  assert(rs!=29);
+  assert(rt!=29);
+  assert(imm==0);
+  assem_debug("ngc %s,%s",regname[rt],regname[rs]);
+  output_w32(0x5a000000|rs<<16|WZR<<5|rt);
 }
 
 static void emit_zeroreg(int rt)
@@ -1584,6 +1572,14 @@ static void emit_movn(u_int imm,u_int rt)
   assert(imm<65536);
   assem_debug("movn %s,#%d",regname[rt],imm);
   output_w32(0x12800000|imm<<5|rt);
+}
+
+static void emit_movn64(u_int imm,u_int rt)
+{
+  assert(rt!=29);
+  assert(imm<65536);
+  assem_debug("movn %s,#%d",regname64[rt],imm);
+  output_w32(0x92800000|imm<<5|rt);
 }
 
 static void emit_movn_lsl16(u_int imm,u_int rt)
@@ -1740,6 +1736,15 @@ static void emit_or(u_int rs1,u_int rs2,u_int rt)
   output_w32(0x2a000000|rs2<<16|rs1<<5|rt);
 }
 
+static void emit_orr64(u_int rs1,u_int rs2,u_int rt)
+{
+  assert(rs1!=29);
+  assert(rs2!=29);
+  assert(rt!=29);
+  assem_debug("orr %s,%s,%s",regname64[rt],regname64[rs1],regname64[rs2]);
+  output_w32(0xaa000000|rs2<<16|rs1<<5|rt);
+}
+
 static void emit_xor(u_int rs1,u_int rs2,u_int rt)
 {
   assert(rs1!=29);
@@ -1840,49 +1845,23 @@ static void emit_addnop(u_int r)
   output_w32(0x11000000|r<<5|r);*/
 }
 
-static void emit_adcimm(u_int rs,int imm,u_int rt)
-{
-  //TOBEDONE
-  assert(0);
-  /*assert(rs!=29);
-  assert(rt!=29);
-  u_int armval, ret;
-  ret = genimm_(imm,&armval);
-  assert(ret);
-  assem_debug("adc %s,%s,#%d",regname[rt],regname[rs],imm);
-  output_w32(0xe2a00000|rd_rn_rm(rt,rs,0)|armval);*/
-}
-
-static void emit_rscimm(int rs,int imm,u_int rt)
-{
-  //TOBEDONE
-  assert(0);
-  /*assert(rs!=29);
-  assert(rt!=29);
-  u_int armval, ret;
-  ret = genimm_(imm,&armval);
-  assert(ret);
-  assem_debug("rsc %s,%s,#%d",regname[rt],regname[rs],imm);
-  output_w32(0xe2e00000|rd_rn_rm(rt,rs,0)|armval);*/
-}
-
 static void emit_addimm64_32(int rsh,int rsl,int imm,int rth,int rtl)
 {
-  //TOBETESTED
-  assert(0);
   assert(rsh!=29);
   assert(rsl!=29);
   assert(rth!=29);
   assert(rtl!=29);
-  // TODO: if(genimm_(imm,&armval)) ...
-  // else
   emit_movimm(imm,HOST_TEMPREG);
   emit_adds(HOST_TEMPREG,rsl,rtl);
-  emit_adcimm(rsh,0,rth);
+  emit_adc(rsh,WZR,rth);
 }
 
 #ifdef INVERTED_CARRY
 static void emit_sbb(int rs1,int rs2)
+{
+  assert(0);
+}
+static void emit_adcimm(u_int rs,int imm,u_int rt)
 {
   assert(0);
 }
@@ -1906,10 +1885,14 @@ static void emit_andimm(int rs,int imm,int rt)
   }
 }
 
-static void emit_andimm64(int rs,int imm,int rt)
+static void emit_andimm64(int rs,int64_t imm,int rt)
 {
-  //TOBEDONE
-  assert(0);
+  assert(rs!=29);
+  assert(rt!=29);
+  u_int armval;
+  assert(genimm((uint64_t)imm,64,&armval));
+  assem_debug("and %s,%s,#%d",regname64[rt],regname64[rs],imm);
+  output_w32(0x92000000|armval<<10|rs<<5|rt);
 }
 
 static void emit_orimm(int rs,int imm,int rt)
@@ -2009,40 +1992,6 @@ static void emit_rorimm(int rs,u_int imm,int rt)
   output_w32(0x13800000|rs<<16|imm<<10|rs<<5|rt);
 }
 
-static void emit_shldimm(int rs,int rs2,u_int imm,int rt)
-{
-  //TOBEDONE
-  assert(0);
-  /*assert(rs!=29);
-  assert(rs2!=29);
-  assert(rt!=29);
-  assem_debug("shld %%%s,%%%s,%d",regname[rt],regname[rs2],imm);
-  assert(imm>0);
-  assert(imm<32);
-  //if(imm==1) ...
-  assem_debug("lsl %s,%s,#%d",regname[rt],regname[rs],imm);
-  output_w32(0xe1a00000|rd_rn_rm(rt,0,rs)|(imm<<7));
-  assem_debug("orr %s,%s,%s,lsr #%d",regname[rt],regname[rt],regname[rs2],32-imm);
-  output_w32(0xe1800020|rd_rn_rm(rt,rt,rs2)|((32-imm)<<7));*/
-}
-
-static void emit_shrdimm(int rs,int rs2,u_int imm,int rt)
-{
-  //TOBEDONE
-  assert(0);
-  /*assert(rs!=29);
-  assert(rs2!=29);
-  assert(rt!=29);
-  assem_debug("shrd %%%s,%%%s,%d",regname[rt],regname[rs2],imm);
-  assert(imm>0);
-  assert(imm<32);
-  //if(imm==1) ...
-  assem_debug("lsr %s,%s,#%d",regname[rt],regname[rs],imm);
-  output_w32(0xe1a00020|rd_rn_rm(rt,0,rs)|(imm<<7));
-  assem_debug("orr %s,%s,%s,lsl #%d",regname[rt],regname[rt],regname[rs2],32-imm);
-  output_w32(0xe1800000|rd_rn_rm(rt,rt,rs2)|((32-imm)<<7));*/
-}
-
 static void emit_shl(u_int rs,u_int shift,u_int rt)
 {
   assert(rs!=29);
@@ -2051,6 +2000,16 @@ static void emit_shl(u_int rs,u_int shift,u_int rt)
   //if(imm==1) ...
   assem_debug("lsl %s,%s,%s",regname[rt],regname[rs],regname[shift]);
   output_w32(0x1ac02000|shift<<16|rs<<5|rt);
+}
+
+static void emit_shl64(u_int rs,u_int shift,u_int rt)
+{
+  assert(rs!=29);
+  assert(rt!=29);
+  assert(shift!=29);
+  //if(imm==1) ...
+  assem_debug("lsl %s,%s,%s",regname64[rt],regname64[rs],regname64[shift]);
+  output_w32(0x9ac02000|shift<<16|rs<<5|rt);
 }
 
 static void emit_shr(u_int rs,u_int shift,u_int rt)
@@ -2062,6 +2021,15 @@ static void emit_shr(u_int rs,u_int shift,u_int rt)
   output_w32(0x1ac02400|shift<<16|rs<<5|rt);
 }
 
+static void emit_shr64(u_int rs,u_int shift,u_int rt)
+{
+  assert(rs!=29);
+  assert(rt!=29);
+  assert(shift!=29);
+  assem_debug("lsr %s,%s,%s",regname64[rt],regname64[rs],regname64[shift]);
+  output_w32(0x9ac02400|shift<<16|rs<<5|rt);
+}
+
 static void emit_sar(u_int rs,u_int shift,u_int rt)
 {
   assert(rs!=29);
@@ -2071,35 +2039,57 @@ static void emit_sar(u_int rs,u_int shift,u_int rt)
   output_w32(0x1ac02800|shift<<16|rs<<5|rt);
 }
 
-static void emit_orrshl(u_int rs,u_int shift,u_int rt)
-{
-  //TOBEDONE
-  assert(0);
-  /*assert(rs!=29);
-  assert(rt!=29);
-  assert(shift!=29);
-  assem_debug("orr %s,%s,%s,lsl %s",regname[rt],regname[rt],regname[rs],regname[shift]);
-  output_w32(0xe1800000|rd_rn_rm(rt,rt,rs)|0x10|(shift<<8));*/
-}
-
-static void emit_orrshl64(u_int rs,u_int shift,u_int rt)
+static void emit_orrshlimm(u_int rs,int imm,u_int rt)
 {
   assert(rs!=29);
   assert(rt!=29);
-  assert(shift<64);
-  assem_debug("orr %s,%s,%s,lsl %d",regname64[rt],regname64[rt],regname64[rs],shift);
-  output_w32(0xaa000000|rs<<16|shift<<10|rt<<5|rt);
+  assert(imm<32);
+  assem_debug("orr %s,%s,%s,lsl #%d",regname[rt],regname[rt],regname[rs],imm);
+  output_w32(0x2a000000|rs<<16|imm<<10|rt<<5|rt);
 }
 
-static void emit_orrshr(u_int rs,u_int shift,u_int rt)
+static void emit_orrshlimm64(u_int rs,int imm,u_int rt)
 {
-  //TOBEDONE
-  assert(0);
-  /*assert(rs!=29);
+  assert(rs!=29);
   assert(rt!=29);
-  assert(shift!=29);
-  assem_debug("orr %s,%s,%s,lsr %s",regname[rt],regname[rt],regname[rs],regname[shift]);
-  output_w32(0xe1800000|rd_rn_rm(rt,rt,rs)|0x30|(shift<<8));*/
+  assert(imm<64);
+  assem_debug("orr %s,%s,%s,lsl #%d",regname64[rt],regname64[rt],regname64[rs],imm);
+  output_w32(0xaa000000|rs<<16|imm<<10|rt<<5|rt);
+}
+
+static void emit_orrshrimm(u_int rs,int imm,u_int rt)
+{
+  assert(rs!=29);
+  assert(rt!=29);
+  assert(imm<32);
+  assem_debug("orr %s,%s,%s,lsr #%d",regname[rt],regname[rt],regname[rs],imm);
+  output_w32(0x2a400000|rs<<16|imm<<10|rt<<5|rt);
+}
+
+static void emit_shldimm(int rs,int rs2,u_int imm,int rt)
+{
+  assert(rs!=29);
+  assert(rs2!=29);
+  assert(rt!=29);
+  assem_debug("shld %%%s,%%%s,%d",regname[rt],regname[rs2],imm);
+  assert(imm>0);
+  assert(imm<32);
+  //if(imm==1) ...
+  emit_shlimm(rs,imm,rt);
+  emit_orrshrimm(rs2,32-imm,rt);
+}
+
+static void emit_shrdimm(int rs,int rs2,u_int imm,int rt)
+{
+  assert(rs!=29);
+  assert(rs2!=29);
+  assert(rt!=29);
+  assem_debug("shrd %%%s,%%%s,%d",regname[rt],regname[rs2],imm);
+  assert(imm>0);
+  assert(imm<32);
+  //if(imm==1) ...
+  emit_shrimm(rs,imm,rt);
+  emit_orrshlimm(rs2,32-imm,rt);
 }
 
 static void emit_cmpimm(int rs,int imm)
@@ -2344,8 +2334,6 @@ static void emit_set_nz32(int rs, int rt)
 
 static void emit_set_gz64_32(int rsh, int rsl, int rt)
 {
-  //TOBETESTED
-  assert(0);
   assert(rsh!=29);
   assert(rsl!=29);
   assert(rt!=29);
@@ -2912,14 +2900,20 @@ static void emit_umulh(u_int rs1, u_int rs2, u_int rt)
 
 static void emit_smull(u_int rs1, u_int rs2, u_int rt)
 {
-  //TOBEDONE
-  assert(0);
+  assem_debug("smull %s, %s, %s",regname64[rt],regname[rs1],regname[rs2]);
+  assert(rs1!=29);
+  assert(rs2!=29);
+  assert(rt!=29);
+  output_w32(0x9b200000|(rs2<<16)|(WZR<<10)|(rs1<<5)|rt);
 }
 
 static void emit_smulh(u_int rs1, u_int rs2, u_int rt)
 {
-  //TOBEDONE
-  assert(0);
+  assem_debug("smulh %s, %s, %s",regname64[rt],regname64[rs1],regname64[rs2]);
+  assert(rs1!=29);
+  assert(rs2!=29);
+  assert(rt!=29);
+  output_w32(0x9b400000|(rs2<<16)|(WZR<<10)|(rs1<<5)|rt);
 }
 
 static void emit_sdiv(u_int rs1,u_int rs2,u_int rt)
@@ -2967,17 +2961,13 @@ static void emit_bic(u_int rs1,u_int rs2,u_int rt)
   output_w32(0x0a200000|rs2<<16|rs1<<5|rt);
 }
 
-static void emit_rsbimm(int rs, int imm, int rt)
+static void emit_bic64(u_int rs1,u_int rs2,u_int rt)
 {
-  //TOBEDONE
-  assert(0);
-  /*assert(rs!=29);
+  assert(rs1!=29);
+  assert(rs2!=29);
   assert(rt!=29);
-  u_int armval, ret;
-  ret = genimm_(imm,&armval);
-  assert(ret);
-  assem_debug("rsb %s,%s,#%d",regname[rt],regname[rs],imm);
-  output_w32(0xe2600000|rd_rn_rm(rt,rs,0)|armval);*/
+  assem_debug("bic %s,%s,%s",regname64[rt],regname64[rs1],regname64[rs2]);
+  output_w32(0x8a200000|rs2<<16|rs1<<5|rt);
 }
 
 // Load 2 immediates optimizing for small code size
@@ -3431,7 +3421,6 @@ static void emit_fcmpd(int x,int y)
 
 static void emit_jno_unlikely(int a)
 {
-  //TOBETESTED
   emit_jno(a);
   //assem_debug("addvc pc,pc,#? (%x)",/*a-(int)out-8,*/a);
   //output_w32(0x72800000|rd_rn_rm(15,15,0));
@@ -4035,10 +4024,8 @@ static void inline_writestub(int type, int i, u_int addr, signed char regmap[], 
 
 static void do_unalignedwritestub(int n)
 {
-  //TOBETESTED
   set_jump_target(stubs[n][1],(intptr_t)out);
   emit_breakpoint(0);
-  output_w32(0xd4000001); //SVC
   emit_jmp(stubs[n][2]); // return address
 }
 
@@ -4062,8 +4049,6 @@ static intptr_t do_dirty_stub(int i)
   if((int)start<(int)0xC0000000){
     emit_read_ptr((intptr_t)source,1);
   }else{
-    //TOBETESTED
-    assert(0);
     emit_movz_lsl16(((u_int)start>>16)&0xffff,1);
     emit_movk(((u_int)start)&0xffff,1);
   }
@@ -4224,6 +4209,15 @@ static void generate_map_const(u_int addr,int tr) {
   emit_movimm((addr>>12)+(((uintptr_t)memory_map-(uintptr_t)&dynarec_local)>>3),tr);
 }
 
+#ifdef NEW_DYNAREC_DEBUG
+static void do_print_pc(int prog_cpt) {
+  save_regs(0x7ffff);
+  emit_movimm(prog_cpt,0);
+  emit_call((intptr_t)print_pc);
+  restore_regs(0x7ffff);
+}
+#endif
+
 /* Special assem */
 static void shift_assemble_arm64(int i,struct regstat *i_regs)
 {
@@ -4293,8 +4287,10 @@ static void shift_assemble_arm64(int i,struct regstat *i_regs)
           if(opcode2[i]==0x14) // DSLLV
           {
             if(th>=0) emit_shl(sh,HOST_TEMPREG,th);
-            emit_rsbimm(HOST_TEMPREG,32,HOST_TEMPREG);
-            emit_orrshr(sl,HOST_TEMPREG,th);
+            emit_neg(HOST_TEMPREG,HOST_TEMPREG);
+            emit_addimm(HOST_TEMPREG,32,HOST_TEMPREG);
+            emit_shr(sl,HOST_TEMPREG,HOST_TEMPREG);
+            emit_or(HOST_TEMPREG,th,th);
             emit_andimm(shift,31,HOST_TEMPREG);
             emit_testimm(shift,32);
             emit_shl(sl,HOST_TEMPREG,tl);
@@ -4305,8 +4301,10 @@ static void shift_assemble_arm64(int i,struct regstat *i_regs)
           {
             assert(th>=0);
             emit_shr(sl,HOST_TEMPREG,tl);
-            emit_rsbimm(HOST_TEMPREG,32,HOST_TEMPREG);
-            emit_orrshl(sh,HOST_TEMPREG,tl);
+            emit_neg(HOST_TEMPREG,HOST_TEMPREG);
+            emit_addimm(HOST_TEMPREG,32,HOST_TEMPREG);
+            emit_shl(sh,HOST_TEMPREG,HOST_TEMPREG);
+            emit_or(HOST_TEMPREG,tl,tl);
             emit_andimm(shift,31,HOST_TEMPREG);
             emit_testimm(shift,32);
             emit_shr(sh,HOST_TEMPREG,th);
@@ -4317,12 +4315,14 @@ static void shift_assemble_arm64(int i,struct regstat *i_regs)
           {
             assert(th>=0);
             emit_shr(sl,HOST_TEMPREG,tl);
-            emit_rsbimm(HOST_TEMPREG,32,HOST_TEMPREG);
+            emit_neg(HOST_TEMPREG,HOST_TEMPREG);
+            emit_addimm(HOST_TEMPREG,32,HOST_TEMPREG);
             if(real_th>=0) {
               assert(temp>=0);
               emit_sarimm(th,31,temp);
             }
-            emit_orrshl(sh,HOST_TEMPREG,tl);
+            emit_shl(sh,HOST_TEMPREG,HOST_TEMPREG);
+            emit_or(HOST_TEMPREG,tl,tl);
             emit_andimm(shift,31,HOST_TEMPREG);
             emit_testimm(shift,32);
             emit_sar(sh,HOST_TEMPREG,th);
@@ -4698,16 +4698,12 @@ static void loadlr_assemble_arm64(int i,struct regstat *i_regs)
       emit_movimm(-1,HOST_TEMPREG);
       if (opcode[i]==0x26) {
         emit_shr(temp2,temp,temp2);
-        //TOBETESTED
         emit_shr(HOST_TEMPREG,temp,HOST_TEMPREG);
         emit_bic(tl,HOST_TEMPREG,tl);
-        //emit_bic_lsr(tl,HOST_TEMPREG,temp,tl);
       }else{
         emit_shl(temp2,temp,temp2);
-        //TOBETESTED
         emit_shl(HOST_TEMPREG,temp,HOST_TEMPREG);
         emit_bic(tl,HOST_TEMPREG,tl);
-        //emit_bic_lsl(tl,HOST_TEMPREG,temp,tl);
       }
       emit_or(temp2,tl,tl);
     }
@@ -4726,36 +4722,33 @@ static void loadlr_assemble_arm64(int i,struct regstat *i_regs)
     if(rt1[i]) {
       assert(th>=0);
       assert(tl>=0);
-      emit_testimm(temp,32);
-      emit_andimm(temp,24,temp);
+      emit_andimm(temp,56,temp);
       if (opcode[i]==0x1A) { // LDL
-        //TOBEDONE
-        assert(0);
-        /*emit_rsbimm(temp,32,HOST_TEMPREG);
-        emit_shl(temp2h,temp,temp2h);
-        emit_orrshr(temp2,HOST_TEMPREG,temp2h);
-        emit_movimm(-1,HOST_TEMPREG);
-        emit_shl(temp2,temp,temp2);
-        emit_cmove_reg(temp2h,th);
-        emit_biceq_lsl(tl,HOST_TEMPREG,temp,tl);
-        emit_bicne_lsl(th,HOST_TEMPREG,temp,th);
-        emit_orreq(temp2,tl,tl);
-        emit_orrne(temp2,th,th);*/
+        emit_mov(temp2,HOST_TEMPREG);
+        emit_orrshlimm64(temp2h,32,HOST_TEMPREG);
+        emit_mov(tl,temp2);
+        emit_orrshlimm64(th,32,temp2);
+        emit_movn64(0,temp2h);
+        emit_shl64(temp2h,temp,temp2h);
+        emit_bic64(temp2,temp2h,temp2); 
+        emit_shl64(HOST_TEMPREG,temp,HOST_TEMPREG);
+        emit_orr64(temp2,HOST_TEMPREG,temp2);
+        emit_mov(temp2,tl);
+        emit_shrimm64(temp2,32,th);
       }
       if (opcode[i]==0x1B) { // LDR
-        //TOBEDONE
-        assert(0);
-        /*emit_xorimm(temp,24,temp);
-        emit_rsbimm(temp,32,HOST_TEMPREG);
-        emit_shr(temp2,temp,temp2);
-        emit_orrshl(temp2h,HOST_TEMPREG,temp2);
-        emit_movimm(-1,HOST_TEMPREG);
-        emit_shr(temp2h,temp,temp2h);
-        emit_cmovne_reg(temp2,tl);
-        emit_bicne_lsr(th,HOST_TEMPREG,temp,th);
-        emit_biceq_lsr(tl,HOST_TEMPREG,temp,tl);
-        emit_orrne(temp2h,th,th);
-        emit_orreq(temp2h,tl,tl);*/
+        emit_xorimm(temp,56,temp);
+        emit_mov(temp2,HOST_TEMPREG);
+        emit_orrshlimm64(temp2h,32,HOST_TEMPREG);
+        emit_mov(tl,temp2);
+        emit_orrshlimm64(th,32,temp2);
+        emit_movn64(0,temp2h);
+        emit_shr64(temp2h,temp,temp2h);
+        emit_bic64(temp2,temp2h,temp2); 
+        emit_shr64(HOST_TEMPREG,temp,HOST_TEMPREG);
+        emit_orr64(temp2,HOST_TEMPREG,temp2);
+        emit_mov(temp2,tl);
+        emit_shrimm64(temp2,32,th);
       }
     }
   }
@@ -5163,7 +5156,6 @@ static void storelr_assemble_arm64(int i,struct regstat *i_regs)
     set_jump_target(done0,(intptr_t)out);
   }
   if(!c||!memtarget)
-    //TOBEDONE: Move this after invalid stub? (see store_assemble)
     add_stub(STORELR_STUB,jaddr,(intptr_t)out,0,(intptr_t)i_regs,rs2[i],ccadj[i],reglist);
   if(!using_tlb) {
     #ifdef RAM_OFFSET
@@ -5377,7 +5369,7 @@ static void cop1_assemble(int i,struct regstat *i_regs)
       emit_addimm64(FP,(intptr_t)&rounding_modes-(intptr_t)&dynarec_local,HOST_TEMPREG);
       emit_readword_dualindexedx4(HOST_TEMPREG,temp,temp);
       output_w32(0xd53b4400|HOST_TEMPREG); /*Read FPCR*/
-      emit_andimm(HOST_TEMPREG,~0x600000,HOST_TEMPREG); /*Clear RMode*/
+      emit_andimm(HOST_TEMPREG,~0xc00000,HOST_TEMPREG); /*Clear RMode*/
       emit_or(temp,HOST_TEMPREG,HOST_TEMPREG); /*Set RMode*/
       output_w32(0xd51b4400|HOST_TEMPREG); /*Write FPCR*/
     }
@@ -6290,8 +6282,6 @@ static void multdiv_assemble_arm64(int i,struct regstat *i_regs)
     {
       if(opcode2[i]==0x18) // MULT
       {
-        //TOBETESTED
-        assert(0);
         signed char m1=get_reg(i_regs->regmap,rs1[i]);
         signed char m2=get_reg(i_regs->regmap,rs2[i]);
         signed char high=get_reg(i_regs->regmap,HIREG);
@@ -6353,8 +6343,6 @@ static void multdiv_assemble_arm64(int i,struct regstat *i_regs)
     {
       if(opcode2[i]==0x1C) // DMULT
       {
-        //TOBETESTED
-        assert(0);
         signed char m1h=get_reg(i_regs->regmap,rs1[i]|64);
         signed char m1l=get_reg(i_regs->regmap,rs1[i]);
         signed char m2h=get_reg(i_regs->regmap,rs2[i]|64);
@@ -6372,9 +6360,9 @@ static void multdiv_assemble_arm64(int i,struct regstat *i_regs)
         assert(loh>=0);
         assert(lol>=0);
         emit_mov(m1l,lol);
-        emit_orrshl64(m1h,32,lol);
+        emit_orrshlimm64(m1h,32,lol);
         emit_mov(m2l,loh);
-        emit_orrshl64(m2h,32,loh);
+        emit_orrshlimm64(m2h,32,loh);
         emit_mul64(lol,loh,hil);
         emit_smulh(lol,loh,hih);
         emit_mov(hil,lol);
@@ -6401,9 +6389,9 @@ static void multdiv_assemble_arm64(int i,struct regstat *i_regs)
         assert(loh>=0);
         assert(lol>=0);
         emit_mov(m1l,lol);
-        emit_orrshl64(m1h,32,lol);
+        emit_orrshlimm64(m1h,32,lol);
         emit_mov(m2l,loh);
-        emit_orrshl64(m2h,32,loh);
+        emit_orrshlimm64(m2h,32,loh);
         emit_mul64(lol,loh,hil);
         emit_umulh(lol,loh,hih);
         emit_mov(hil,lol);
@@ -6430,9 +6418,9 @@ static void multdiv_assemble_arm64(int i,struct regstat *i_regs)
         assert(quoh>=0);
         assert(quol>=0);
         emit_mov(numl,quol);
-        emit_orrshl64(numh,32,quol);
+        emit_orrshlimm64(numh,32,quol);
         emit_mov(denoml,quoh);
-        emit_orrshl64(denomh,32,quoh);
+        emit_orrshlimm64(denomh,32,quoh);
         emit_sdiv64(quol,quoh,reml);
         emit_msub64(reml,quoh,quol,remh);
         emit_mov(reml,quol);
@@ -6459,9 +6447,9 @@ static void multdiv_assemble_arm64(int i,struct regstat *i_regs)
         assert(quoh>=0);
         assert(quol>=0);
         emit_mov(numl,quol);
-        emit_orrshl64(numh,32,quol);
+        emit_orrshlimm64(numh,32,quol);
         emit_mov(denoml,quoh);
-        emit_orrshl64(denomh,32,quoh);
+        emit_orrshlimm64(denomh,32,quoh);
         emit_udiv64(quol,quoh,reml);
         emit_msub64(reml,quoh,quol,remh);
         emit_mov(reml,quol);
